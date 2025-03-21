@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model nguoi_dung {
+  nguoi_dung_id Int         @id @default(autoincrement())
+  email         String      @unique
+  mat_khau      String
+  ho_ten        String
+  tuoi          Int?
+  anh_dai_dien  String?
+  hinh_anh      hinh_anh[]  @relation("UserImages")
+  binh_luan     binh_luan[] @relation("UserComments")
+  luu_anh       luu_anh[]   @relation("UserSavedImages")
+}
+
+model hinh_anh {
+  hinh_id       Int         @id @default(autoincrement())
+  ten_hinh      String
+  duong_dan     String
+  mo_ta         String?
+  nguoi_dung_id Int
+  user          nguoi_dung  @relation("UserImages", fields: [nguoi_dung_id], references: [nguoi_dung_id], onDelete: Cascade)
+  binh_luan     binh_luan[] @relation("ImageComments")
+  luu_anh       luu_anh[]   @relation("ImageSaved")
+}
+
+model binh_luan {
+  binh_luan_id   Int        @id @default(autoincrement())
+  nguoi_dung_id  Int
+  hinh_id        Int
+  ngay_binh_luan DateTime
+  noi_dung       String
+  user           nguoi_dung @relation("UserComments", fields: [nguoi_dung_id], references: [nguoi_dung_id], onDelete: Cascade)
+  image          hinh_anh   @relation("ImageComments", fields: [hinh_id], references: [hinh_id], onDelete: Cascade)
+}
+
+model luu_anh {
+  nguoi_dung_id Int        @map("nguoi_dung_id")
+  hinh_id       Int        @map("hinh_id")
+  ngay_luu      DateTime
+  user          nguoi_dung @relation("UserSavedImages", fields: [nguoi_dung_id], references: [nguoi_dung_id], onDelete: Cascade)
+  image         hinh_anh   @relation("ImageSaved", fields: [hinh_id], references: [hinh_id], onDelete: Cascade)
+  @@id([nguoi_dung_id, hinh_id])
+}
