@@ -11,11 +11,12 @@ import {
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express'; // Sử dụng FilesInterceptor thay vì FileInterceptor
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ImagesService } from './images.service';
 import { UploadImageDto } from './dto/upload-image.dto';
+import { UploadImageRequestDto } from './dto/upload-image-request.dto'; // Import DTO mới
 import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
@@ -41,29 +42,11 @@ export class ImagesController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Upload nhiều hình ảnh',
-    type: 'multipart/form-data',
-    schema: {
-      type: 'object',
-      properties: {
-        files: {
-          type: 'array', // Định nghĩa là array để hỗ trợ nhiều file
-          items: {
-            type: 'string',
-            format: 'binary',
-          },
-        },
-        mo_ta: {
-          type: 'string',
-          description: 'Mô tả hình ảnh',
-          example: 'This is my image',
-        },
-      },
-    },
+    type: UploadImageRequestDto, // Sử dụng DTO
   })
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(
     FilesInterceptor('files', 10, {
-      // Sử dụng FilesInterceptor, giới hạn tối đa 10 file
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
@@ -87,16 +70,14 @@ export class ImagesController {
   )
   @Post('upload')
   async uploadImages(
-    // Đổi tên phương thức để rõ ràng hơn
     @Body() uploadImageDto: UploadImageDto,
-    @UploadedFiles() files: Express.Multer.File[], // Sử dụng UploadedFiles thay vì UploadedFile
+    @UploadedFiles() files: Express.Multer.File[],
     @Request() req,
   ) {
     if (!files || files.length === 0) {
       throw new NotFoundException('At least one file is required');
     }
 
-    // Gọi service để lưu từng hình ảnh
     const uploadedImages = await this.imagesService.createMultiple(
       uploadImageDto,
       req.user.nguoi_dung_id,
